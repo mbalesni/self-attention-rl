@@ -1,0 +1,25 @@
+MayanAdventureLearning:
+  trainer: ppo
+  batch_size: 1024
+  beta: 1.0e-2 # what is this?
+  buffer_size: 2048 # what is this?
+  hidden_units: 512
+  max_steps: 5.0e7
+  memory_size: 256
+  normalize: true
+  num_epoch: 8
+  num_layers: 2
+  learning_rate_schedule: constant
+  learning_rate: 1.0e-4
+  sequence_length: 64
+  summary_freq: 30000
+  time_horizon: 1000
+  use_recurrent: false
+  reward_signals:
+    extrinsic:
+      strength: 1.0
+      gamma: 0.99
+    curiosity: # how does this work?
+      strength: 0.02
+      gamma: 0.99
+      encoding_size: 256

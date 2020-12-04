@@ -1,0 +1,3 @@
+[submodule "the_mayan_adventure"]
+	path = the_mayan_adventure
+	url = ./the_mayan_adventure/
