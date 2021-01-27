@@ -7,6 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 from torch.nn.functional import one_hot
 from torch.nn.utils.rnn import pad_sequence
 from collections import namedtuple
+from tqdm import tqdm
 
 sys.path.insert(-1, './ml-agents-release_10/ml-agents/mlagents/trainers')
 from demo_loader import load_demonstration, get_demo_files
@@ -54,7 +55,7 @@ def parse_demo(info_action_pairs, reward_zero_threshold=None):
   episodes = []
   buffer = []
 
-  for info_action in info_action_pairs:
+  for info_action in tqdm(info_action_pairs):
     observation, action, reward, done = parse_single_step(info_action, reward_zero_threshold)
     buffer.append(Step(observation, action, reward))
 
@@ -125,6 +126,30 @@ def one_hot_encode_action(action, n_values=3):
 
   return one_hot(index, n_classes)
 
+def load_episodes(demo, demo_dir, reward_threshold):
+  episodes = []
+
+  if demo_dir:
+    demos_paths = get_demo_files(demo_dir)
+    print(f'Found {len(demos_paths)} demonstration files:')
+    for i, path_to_demo in enumerate(demos_paths):
+      print(f'- ({i+1}/{len(demos_paths)}) ', end=' ')
+      _, info_action_pairs, _ = load_demonstration(path_to_demo)
+      demo_episodes = parse_demo(info_action_pairs, REWARD_THRESHOLD)
+      episodes += demo_episodes
+      print(f'— {len(demo_episodes)} episodes added.')
+      del info_action_pairs
+      del demo_episodes
+
+  elif demo:
+    _, info_action_pairs, _ = load_demonstration(demo)
+    episodes = parse_demo(info_action_pairs, REWARD_THRESHOLD)
+    del info_action_pairs
+
+  else:
+    raise 'Error: No path to demo provided.'
+
+  return episodes
 
 class TrajectoriesDataset(Dataset):
     def __init__(self, observations, actions, rewards):
@@ -143,39 +168,35 @@ class TrajectoriesDataset(Dataset):
 
 
 if __name__ == '__main__':
+
   REWARD_THRESHOLD = 0.01
-  PATH_TO_DEMO_DIRECTORY = './the_mayan_adventure/The Mayan Adventure Unity Project/Assets/Demonstrations/'
-  # PATH_TO_DEMO = './the_mayan_adventure/The Mayan Adventure Unity Project/Assets/Demonstrations/baseline-ppo_0.demo'
-  
-  episodes = []
-
-  demos_paths = get_demo_files(PATH_TO_DEMO_DIRECTORY)
-  print(f'Found {len(demos_paths)} demonstration files:')
-  for path_to_demo in demos_paths:
-    print('- ' + path_to_demo, end=' ')
-    _, info_action_pairs, _ = load_demonstration(path_to_demo)
-    demo_episodes = parse_demo(info_action_pairs, REWARD_THRESHOLD)
-    episodes += demo_episodes
-    print(f'{len(demo_episodes)} episodes added.')
-
-  observations, actions, rewards = episodes_to_tensors(episodes, verbose=False, pad_val=10.)
-
+  path_to_demo_directory = './the_mayan_adventure/The Mayan Adventure Unity Project/Assets/Demonstrations/Evaluation'
+  path_to_demo = None # './the_mayan_adventure/The Mayan Adventure Unity Project/Assets/Demonstrations/AttentionVisualizing/AttentionVisuali_1.demo'
   save = True
   debug = False
+
+  dataset_name = None
+  if len(sys.argv) > 1:
+    dataset_name = sys.argv[1]
+  else:
+    raise 'Error: please provide dataset name as an argument.'
   
+  episodes = load_episodes(path_to_demo, path_to_demo_directory, REWARD_THRESHOLD)
+  observations, actions, rewards = episodes_to_tensors(episodes, verbose=False, pad_val=10)  
   dataset = TrajectoriesDataset(observations, actions, rewards)
 
   if debug:
     loader = DataLoader(dataset, batch_size=32)
 
     for batch in loader:
-      print(batch[2].shape)
+      print(batch[3].shape)
 
   if save:
-    dataset_name = f'./dataset-{int(time.time())}.pt'
-    torch.save(dataset, dataset_name)
+    os.makedirs('./datasets', exist_ok=True)
+    file_name = f'./datasets/dataset-{dataset_name}.pt'
+    torch.save(dataset, file_name)
 
-    print(f'Saved dataset with {len(dataset)} episodes at {dataset_name}')
+    print(f'\nSaved dataset with {len(dataset)} episodes at {file_name}')
 
 
 

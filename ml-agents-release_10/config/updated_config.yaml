@@ -40,7 +40,7 @@ environment_parameters:
         behavior: MayanAdventureLearning
         signal_smoothing: true
         min_lesson_length: 100
-        threshold: 0.8
+        threshold: 0.5
       value: 0.0
     - name: Lesson1
       completion_criteria:
@@ -48,7 +48,7 @@ environment_parameters:
         behavior: MayanAdventureLearning
         signal_smoothing: true
         min_lesson_length: 100
-        threshold: 1.6
+        threshold: 0.55
       value: 1.0
     - name: Lesson2
       completion_criteria:
@@ -56,7 +56,7 @@ environment_parameters:
         behavior: MayanAdventureLearning
         signal_smoothing: true
         min_lesson_length: 100
-        threshold: 2.2
+        threshold: 0.6
       value: 2.0
     - name: Lesson3
       value: 3.0
